@@ -42,7 +42,7 @@ class APriori():
             for item_2 in Columna:
                 if item is not item_2:
                     for elemento in item_2:
-                        temp = item.copy()
+                        temp = item[:]
                         if elemento not in item:
                             temp.append(elemento)
                         temp = sorted(temp)
@@ -119,7 +119,7 @@ class APriori():
         self.Soporte["Item"] = self.Soporte['Item'].apply(lambda x: [x])
         print("")
         print("Calculando Frec.Soporte...")
-        self.Soporte["Frec. Soporte"] = self.Soporte['Item'].apply(lambda x: self.__CalcularFreqSoporteRefractor(x, self.Datos["items"]))
+        self.Soporte["Frec. Soporte"] = self.Soporte['Item'].apply(lambda x: self.__CalcularFreqSoporteRefractor(x, self.Datos["items"].values))
         print("")
         print("Calculando Soporte...")
         self.Soporte["Soporte"] = self.Soporte["Frec. Soporte"] / len(self.Datos)
@@ -142,12 +142,12 @@ class APriori():
         while End is False:
             print("Probando k = " + str(k))
 
-            Soporte_bk = self.Soporte.copy()
+            Soporte_bk = self.Soporte[:]
             Dataframe_temp = pd.DataFrame()
             print("Calculando combinaciones")
             Dataframe_temp["Item"] = self.__Combinaciones(Soporte_bk["Item"], k)
             print("Calculando Frec.Soporte")
-            Dataframe_temp["Frec. Soporte"] = Dataframe_temp['Item'].apply(lambda x: self.__CalcularFreqSoporteRefractor(x, self.Datos["items"]))
+            Dataframe_temp["Frec. Soporte"] = Dataframe_temp['Item'].apply(lambda x: self.__CalcularFreqSoporteRefractor(x, self.Datos["items"].values))
             print("Calculando Soporte")
             Dataframe_temp["Soporte"] = Dataframe_temp["Frec. Soporte"] / len(self.Datos)
 
@@ -159,7 +159,7 @@ class APriori():
                 Dataframe_temp = Dataframe_temp[Dataframe_temp["Frec. Soporte"] >= MinimoFreqSop]
 
             if len(Dataframe_temp) is not 0:
-                self.Soporte = Dataframe_temp.copy()
+                self.Soporte = Dataframe_temp[:]
                 self.Soporte = self.Soporte.reset_index(drop=False)
                 del self.Soporte["index"]
                 k = k + 1
@@ -196,7 +196,7 @@ class APriori():
             regla = self.Reglas.loc[idx_fila, "Item"]
 
             for idx_regla in range(0, len(regla)):
-                regla_tmp = regla.copy()
+                regla_tmp = regla[:]
                 r_1 = regla_tmp[idx_regla]
                 del regla_tmp[idx_regla]
 
@@ -212,18 +212,18 @@ class APriori():
         self.ReglasConfianza["r_2"] = arr_r_2
         self.ReglasConfianza["soporte_r_1"] = soporte_r_1
         self.ReglasConfianza["soporte_r_2"] = self.ReglasConfianza["r_1"].apply(
-            lambda x: self.__CalcularFreqSoporteRefractor(x, self.Datos["items"]))
+            lambda x: self.__CalcularFreqSoporteRefractor(x, self.Datos["items"].values))
 
         self.ReglasConfianza["confianza"] = round((self.ReglasConfianza["soporte_r_1"] / self.ReglasConfianza["soporte_r_2"]) * 100, 0)
         self.ReglasConfianza["temp"] = self.ReglasConfianza["r_1"].apply(lambda x: ''.join(x))
         self.ReglasConfianza = self.ReglasConfianza.sort_values(["temp"])
         self.ReglasConfianza["temp"] += self.ReglasConfianza["r_2"].apply(lambda x: ''.join(x))
-        self.ReglasConfianza.drop_duplicates(subset='temp', keep="last")
-        del self.ReglasConfianza["temp"]
-        self.ReglasConfianza = self.ReglasConfianza.reset_index(drop=True)
+
         self.ReglasConfianza= self.ReglasConfianza[self.ReglasConfianza["confianza"] >= ConfianzaMinima]
 
         self.ReglasConfianza = self.ReglasConfianza.sort_values(by=['confianza'], ascending=False)
+        self.ReglasConfianza.drop_duplicates(subset='temp', keep="last")
+        del self.ReglasConfianza["temp"]
         self.ReglasConfianza = self.ReglasConfianza.reset_index(drop=True)
 
         print("Reglas de asociación: ")
